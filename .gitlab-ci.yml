@@ -1,0 +1,85 @@
+stages:
+  - build
+  - style
+  - test
+  - deploy
+
+build-job:
+  stage: build
+  tags:
+    - build
+  script:
+    - cd src/cat
+    - make s21_cat
+    - cd ../grep
+    - make s21_grep
+  artifacts:
+    paths:
+      - src/cat
+      - src/grep
+    expire_in: 30 days
+  only:
+    - develop
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "success" ]; then
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап сборки завершен успешно!"
+      else
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап сборки завершен с ошибкой!"
+      fi
+
+style-job:
+  stage: style
+  tags:
+    - test
+  script:
+    - cd src/cat
+    - clang-format -style=Google -Werror -n *.c *.h
+    - cd ../grep
+    - clang-format -style=Google -Werror -n *.c *.h
+  only:
+    - develop
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "success" ]; then
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап форматирования завершен успешно!"
+      else
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап форматирования завершен с ошибкой!"
+      fi
+
+test-job:
+  stage: test
+  tags:
+    - test
+  script:
+    - cd src/cat
+    - bash test_cat.sh
+    - cd ../grep
+    - bash s21_grep_test.sh
+  only:
+    - develop
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "success" ]; then
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап тестирования завершен успешно!"
+      else
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап тестирования завершен с ошибкой!"
+      fi
+
+deploy-job:
+  stage: deploy
+  tags:
+    - test
+  script:
+    - whoami
+    - chmod +x src/deploy.sh
+    - bash src/deploy.sh
+  only:
+    - develop
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "success" ]; then
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап деплоя завершен успешно!"
+      else
+        curl -X POST "https://api.telegram.org/bot6699429581:AAFKIXklApFSschQuuJifUfgb9GfDiR_g4g/sendMessage" -d "chat_id=6710435403" -d "text=Этап деплоя завершен с ошибкой!"
+      fi
